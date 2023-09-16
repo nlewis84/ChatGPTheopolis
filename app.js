@@ -14,10 +14,9 @@ async function insertGreekText(filePath) {
     const words = preprocessGreekText(filePath);
     let chapter = 1;
     let verse = 1;
-    let wordPositionInVerse = 1; // Initialize the position to 1 for the first word in the verse
+    let wordPositionInVerse = 0; // Initialize the position to 1 for the first word in the verse
     let wordOccurrence;
     let bowVector;
-    const wordOccurrenceInVerse = {};
 
     for (const word of words) {
       if (word.match(/^\d+:\d+$/)) {
@@ -26,8 +25,11 @@ async function insertGreekText(filePath) {
         chapter = newChapter;
         verse = newVerse;
         wordPositionInVerse = 1; // Reset the position to 1 for the first word in the verse
+        console.log(`Processing verse ${chapter}:${verse}`);
         continue; // Skip this word, it's just chapter:verse info
       }
+
+      console.log(`Processing word: ${word}, Position: ${wordPositionInVerse}, Verse: ${chapter}:${verse}`);
 
       bowVector = await prisma.bowVector.findFirst({
         where: {
@@ -65,7 +67,7 @@ async function insertGreekText(filePath) {
         const existingWordOccurrenceInVerse = bowVector.WordOccurrence.find(
           (wo) => wo.chapter === chapter && wo.verse === verse
         );
-      
+    
         if (!existingWordOccurrenceInVerse) {
           // If it's the first occurrence in this verse, increment the frequency
           await prisma.wordOccurrence.create({
