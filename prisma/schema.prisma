@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model WordOccurrence {
+  id          Int       @id @default(autoincrement())
+  bowVector   BowVector @relation(fields: [bowVectorId], references: [id])
+  bowVectorId Int
+  frequency   Int
+  position    Int
+  chapter     Int
+  verse       Int
+}
+
+model BowVector {
+  id                  Int                  @id @default(autoincrement())
+  word                String
+  positions           WordOccurrence[]
+  WordTotalOccurrence WordTotalOccurrence?
+}
+
+model WordTotalOccurrence {
+  id               Int       @id @default(autoincrement())
+  wordId           Int       @unique
+  totalOccurrences Int
+  word             BowVector @relation(fields: [wordId], references: [id])
+}
