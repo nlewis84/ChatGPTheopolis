@@ -21,43 +21,43 @@ async function insertGreekText(filePath) {
         continue;
       }
 
+      // Explicitly check if BowVector already exists
       bowVector = await prisma.bowVector.findFirst({
         where: {
           word: word,
         },
-        include: {
-          WordOccurrence: {
-            where: {
-              chapter: chapter,
-              verse: verse,
-            },
-          },
-        },
       });
 
+
       if (!bowVector) {
+        // Create new BowVector if it doesn't exist
         bowVector = await prisma.bowVector.create({
           data: {
             word: word,
             totalOccurrences: 1,
-            WordOccurrence: {
-              create: {
-                chapter: chapter,
-                verse: verse,
-                frequency: 1,
-              },
-            },
           },
-          include: {
-            WordOccurrence: true,
+        });
+
+        // Create a new wordOccurrence as well
+        wordOccurrence = await prisma.wordOccurrence.create({
+          data: {
+            bowVectorId: bowVector.id,
+            chapter: chapter,
+            verse: verse,
+            frequency: 1,
           },
         });
       } else {
-        const existingWordOccurrenceInVerse = bowVector.WordOccurrence.find(
-          (wo) => wo.chapter === chapter && wo.verse === verse
-        );
+        wordOccurrence = await prisma.wordOccurrence.findFirst({
+          where: {
+            bowVectorId: bowVector.id,
+            chapter: chapter,
+            verse: verse,
+          },
+        });
 
-        if (!existingWordOccurrenceInVerse) {
+        if (!wordOccurrence) {
+          // Create new WordOccurrence for the existing BowVector
           wordOccurrence = await prisma.wordOccurrence.create({
             data: {
               bowVectorId: bowVector.id,
@@ -67,9 +67,10 @@ async function insertGreekText(filePath) {
             },
           });
         } else {
-          wordOccurrence = await prisma.wordOccurrence.update({
+          // Update the frequency of the existing WordOccurrence
+          await prisma.wordOccurrence.update({
             where: {
-              id: existingWordOccurrenceInVerse.id,
+              id: wordOccurrence.id,
             },
             data: {
               frequency: {
@@ -79,6 +80,7 @@ async function insertGreekText(filePath) {
           });
         }
 
+        // Update totalOccurrences of the existing BowVector
         await prisma.bowVector.update({
           where: {
             id: bowVector.id,
@@ -91,13 +93,24 @@ async function insertGreekText(filePath) {
         });
       }
 
-      await prisma.wordPosition.create({
-        data: {
-          wordOccurrenceId: wordOccurrence.id,
-          position: wordPositionInVerse,
-          bowVectorId: bowVector.id,
-        },
-      });
+      if (!wordOccurrence) {
+        console.log(
+          `Error inserting wordOccurrence for word ${word} in chapter ${chapter}, verse ${verse}`
+        );
+        continue;
+      }
+
+      try {
+        await prisma.wordPosition.create({
+          data: {
+            wordOccurrenceId: wordOccurrence.id,
+            position: wordPositionInVerse,
+            bowVectorId: bowVector.id,
+          },
+        });
+      } catch (err) {
+        console.log("Error inserting wordPosition: ", err);
+      }
 
       wordPositionInVerse++;
     }
