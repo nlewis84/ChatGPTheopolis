@@ -15,33 +15,25 @@ model WordPosition {
   wordOccurrence   WordOccurrence @relation(fields: [wordOccurrenceId], references: [id])
   wordOccurrenceId Int
   position         Int
-  // Add any other attributes related to position here
   BowVector        BowVector?     @relation(fields: [bowVectorId], references: [id])
   bowVectorId      Int?
 }
 
 model WordOccurrence {
   id           Int            @id @default(autoincrement())
+  bookName     String
   bowVector    BowVector      @relation(fields: [bowVectorId], references: [id])
   bowVectorId  Int
   frequency    Int
   chapter      Int
   verse        Int
-  // You can remove the "position" field from this table
   WordPosition WordPosition[]
 }
 
 model BowVector {
-  id                  Int                  @id @default(autoincrement())
-  word                String
-  positions           WordPosition[]
-  WordTotalOccurrence WordTotalOccurrence?
-  WordOccurrence      WordOccurrence[]
-}
-
-model WordTotalOccurrence {
-  id               Int       @id @default(autoincrement())
-  wordId           Int       @unique
+  id               Int              @id @default(autoincrement())
+  word             String
   totalOccurrences Int
-  word             BowVector @relation(fields: [wordId], references: [id])
+  positions        WordPosition[]
+  WordOccurrence   WordOccurrence[]
 }
