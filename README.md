@@ -70,4 +70,4 @@ You can seed the entire Greek Bible by running the following command:
 yarn seed:greek
 ```
 
-> ⏰ **Note:** This will take a few minutes to complete. Please be patient.
+> ⏰ **Note:** This will take a few minutes to complete. Please be patient. The Synoptic Gospels (Matthew, Mark, Luke, and John) take the longest.
