@@ -8,8 +8,18 @@ const CHAPTER_VERSE_REGEX = /^\d+:\d+$/;
 // Function to extract the book name from the file path
 function extractBookName(filePath) {
   const fileName = path.basename(filePath, path.extname(filePath));
-  const [bookName] = fileName.split('_');
-  return bookName;
+
+  if (isNaN(parseInt(fileName[0]))) {
+    const [bookName] = fileName.split('_');
+    
+    console.log("Processing book: ", bookName)
+    return bookName;
+  } else {
+    const parts = fileName.split('_');
+
+    console.log("Processing book: ", parts.slice(0, 2).join(' '))
+    return parts.slice(0, 2).join(' ');
+  }
 }
 
 async function createOrUpdateBowVector(word, bookName, chapter, verse) {
@@ -25,7 +35,7 @@ async function createOrUpdateBowVector(word, bookName, chapter, verse) {
     });
   } else {
     wordOccurrence = await prisma.wordOccurrence.findFirst({
-      where: { bowVectorId: bowVector.id, chapter, verse },
+      where: { bowVectorId: bowVector.id, bookName, chapter, verse },
     });
 
     wordOccurrence
@@ -83,6 +93,7 @@ async function insertGreekText(filePath) {
       context.wordPositionInVerse++;
     }
 
+    console.log(`Book ${bookName} inserted successfully.`)
     return { message: 'Greek text inserted successfully.' };
   } catch (error) {
     console.error('Error inserting Greek text:', error);
