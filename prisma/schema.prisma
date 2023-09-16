@@ -31,17 +31,9 @@ model WordOccurrence {
 }
 
 model BowVector {
-  id                  Int                  @id @default(autoincrement())
-  word                String
-  totalOccurrences    Int
-  positions           WordPosition[]
-  WordTotalOccurrence WordTotalOccurrence?
-  WordOccurrence      WordOccurrence[]
-}
-
-model WordTotalOccurrence {
-  id               Int       @id @default(autoincrement())
-  wordId           Int       @unique
+  id               Int              @id @default(autoincrement())
+  word             String
   totalOccurrences Int
-  word             BowVector @relation(fields: [wordId], references: [id])
+  positions        WordPosition[]
+  WordOccurrence   WordOccurrence[]
 }
