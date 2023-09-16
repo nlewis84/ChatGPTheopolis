@@ -21,12 +21,12 @@ model WordPosition {
 
 model WordOccurrence {
   id           Int            @id @default(autoincrement())
+  bookName     String
   bowVector    BowVector      @relation(fields: [bowVectorId], references: [id])
   bowVectorId  Int
   frequency    Int
   chapter      Int
   verse        Int
-  // You can remove the "position" field from this table
   WordPosition WordPosition[]
 }
 
