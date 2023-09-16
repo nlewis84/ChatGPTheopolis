@@ -10,21 +10,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model WordPosition {
+  id               Int            @id @default(autoincrement())
+  wordOccurrence   WordOccurrence @relation(fields: [wordOccurrenceId], references: [id])
+  wordOccurrenceId Int
+  position         Int
+  // Add any other attributes related to position here
+  BowVector        BowVector?     @relation(fields: [bowVectorId], references: [id])
+  bowVectorId      Int?
+}
+
 model WordOccurrence {
-  id          Int       @id @default(autoincrement())
-  bowVector   BowVector @relation(fields: [bowVectorId], references: [id])
-  bowVectorId Int
-  frequency   Int
-  position    Int
-  chapter     Int
-  verse       Int
+  id           Int            @id @default(autoincrement())
+  bowVector    BowVector      @relation(fields: [bowVectorId], references: [id])
+  bowVectorId  Int
+  frequency    Int
+  chapter      Int
+  verse        Int
+  // You can remove the "position" field from this table
+  WordPosition WordPosition[]
 }
 
 model BowVector {
   id                  Int                  @id @default(autoincrement())
   word                String
-  positions           WordOccurrence[]
+  positions           WordPosition[]
   WordTotalOccurrence WordTotalOccurrence?
+  WordOccurrence      WordOccurrence[]
 }
 
 model WordTotalOccurrence {
