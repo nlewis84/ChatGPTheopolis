@@ -28,7 +28,7 @@
 
 1. **Clone the Repository**
     ```bash
-    git clone https://github.com/yourusername/ChatGPTheopolis.git
+    git clone https://github.com/nlewis84/ChatGPTheopolis.git
     ```
 
 2. **Install the Dependencies**
@@ -38,7 +38,8 @@
     ```
 
 3. **Create a Local Database**
-    - Refer to [this guide](http://yourdbguide.com) for database setup.
+    - Create a local database using [PostgreSQL](https://www.postgresql.org/download/).
+    - Set the `DATABASE_URL` in the `.env` file to the connection string of your local database.
 
 4. **Initialize the Database Tables**
     ```bash
