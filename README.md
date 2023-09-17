@@ -48,7 +48,7 @@
 
 5. **Start the Server**
     ```bash
-    node app.js
+    yarn dev
     ```
 
 ---

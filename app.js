@@ -1,7 +1,7 @@
 // Import required modules
 const express = require('express');
 const bodyParser = require('body-parser');
-const { insertGreekText } = require('./greekTextService');
+const { fetchGreekText, insertGreekText } = require('./greekTextService');
 
 // Initialize the Express app
 const app = express();
@@ -24,9 +24,23 @@ app.post('/insert', async (req, res) => {
 // API endpoint to fetch Greek text by book, chapter, and verse
 // It expects these as query parameters
 app.get('/greekText', async (req, res) => {
-  const { book, chapter, verse } = req.query;
-  // TODO: Fetch the Greek text from the database
-  // TODO: Return the fetched text as JSON
+  try {
+    const { book, chapter, verse } = req.query;
+    
+    // Fetch the Greek text from the database
+    const greekTextData = await fetchGreekText(book, chapter, parseInt(verse));
+    
+    // Check if the data exists
+    if (greekTextData.length === 0) {
+      res.status(404).json({ message: 'Greek text not found.' });
+      return;
+    }
+    
+    // Return the fetched text as JSON
+    res.json(greekTextData);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // API endpoint to fetch vector data for a list of words

@@ -101,6 +101,54 @@ async function insertGreekText(filePath) {
   }
 }
 
+async function fetchGreekText(book, chapter, verse) {
+  try {
+    // Convert chapter and verse to integers
+    const chapterInt = parseInt(chapter, 10);
+    const verseInt = parseInt(verse, 10);
+
+    // Verify if the chapter and verse strings were successfully converted to integers
+    if (isNaN(chapterInt) || isNaN(verseInt)) {
+      throw new Error('Invalid chapter or verse number');
+    }
+
+    // Query database for the Greek text with matching book, chapter, and verse
+    const greekTextData = await prisma.wordOccurrence.findMany({
+      where: {
+        bookName: book,
+        chapter: chapterInt,
+        verse: verseInt,
+      },
+      select: {
+        id: true,
+        bookName: true,
+        chapter: true,
+        verse: true,
+        frequency: true,
+        bowVector: {
+          select: {
+            word: true,
+            totalOccurrences: true,
+          },
+        },
+        WordPosition: {  // Select WordPositions related to this WordOccurrence
+          select: {
+            position: true,
+          },
+        },
+      },
+    });
+
+    return greekTextData;
+
+  } catch (error) {
+    // Handle the error accordingly
+    console.error("Error fetching Greek text:", error);
+    throw error;
+  }
+}
+
 module.exports = {
+  fetchGreekText,
   insertGreekText,
 };
