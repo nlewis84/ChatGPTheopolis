@@ -1,10 +1,14 @@
 // Import required modules
 const express = require('express');
 const bodyParser = require('body-parser');
-const { fetchGreekText, insertGreekText } = require('./greekTextService');
+const { fetchGreekText, fetchVerseText, insertGreekText } = require('./greekTextService');
+const { exec } = require('child_process');
+const { PrismaClient } = require('@prisma/client');
 
 // Initialize the Express app
 const app = express();
+
+const prisma = new PrismaClient();
 
 // Middleware to parse JSON requests
 app.use(bodyParser.json());
@@ -19,6 +23,83 @@ app.post('/insert', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// New endpoint to find similar words
+app.get('/similarWords', async (req, res) => {
+  try {
+    const { word } = req.query;
+
+    // Define the Python script to execute
+    const pythonScript = './scripts/calculate_similarity.py';
+
+    // Execute the Python script with the specified word as an argument
+    exec(`python3 ${pythonScript} ${word}`, async (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error: ${error.message}`);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+      }
+      if (stderr) {
+        console.error(`stderr: ${stderr}`);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+      }
+
+      // Parse the output from the Python script
+      const similarWords = stdout
+        .split('\n')
+        .filter(line => line.trim() !== '')
+        .map(line => {
+          const [word, similarity] = line.split(', ');
+          return { word: word.split(': ')[1], similarity: parseFloat(similarity.split(': ')[1]) };
+        });
+
+      // Use the similar words data to query your database (e.g., VerseScore records)
+      const similarWordStrings = similarWords.map(sw => sw.word);
+
+     // Query the database for WordOccurrences that match the similar words
+     const relevantWordOccurrences = await prisma.wordOccurrence.findMany({
+      where: {
+        bowVector: {
+          word: {
+            in: similarWordStrings,
+          },
+        },
+      },
+      include: {
+        verseScore: true,
+      },
+    });
+
+    // Extract unique verseScore records from the relevant WordOccurrences
+    const relevantVerseScores = [...new Set(relevantWordOccurrences.map(wo => wo.verseScore))];
+
+    // Get the related verses based on VerseScore records
+    const relatedVerses = await Promise.all(
+      relevantVerseScores.map(async verseScore => {
+        const { bookName, chapter, verse } = verseScore;
+        // Construct the filename based on bookName
+        const fileName = bookName.replace(/ /g, '_') + '_Greek.txt';
+
+        // Fetch the text of the related verse from the file
+        const relatedVerseText = await fetchVerseText(fileName, chapter, verse);
+
+        return {
+          bookName,
+          chapter,
+          verse,
+          relatedVerseText,
+        };
+      })
+    );
+
+    // Return the related verses as JSON
+    res.json(relatedVerses);
+  });
+} catch (error) {
+  res.status(500).json({ error: 'Internal server error' });
+}
 });
 
 // API endpoint to fetch Greek text by book, chapter, and verse
