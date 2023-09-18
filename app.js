@@ -26,7 +26,7 @@ app.post('/insert', async (req, res) => {
 });
 
 // New endpoint to find similar words
-app.get('/similarWords', async (req, res) => {
+app.get('/similarWordsAndScriptures', async (req, res) => {
   try {
     const { word } = req.query;
 
@@ -46,7 +46,7 @@ app.get('/similarWords', async (req, res) => {
         return;
       }
 
-      // Parse the output from the Python script
+      // Parse the output from the Python script to get similar words
       const similarWords = stdout
         .split('\n')
         .filter(line => line.trim() !== '')
@@ -55,51 +55,46 @@ app.get('/similarWords', async (req, res) => {
           return { word: word.split(': ')[1], similarity: parseFloat(similarity.split(': ')[1]) };
         });
 
-      // Use the similar words data to query your database (e.g., VerseScore records)
-      const similarWordStrings = similarWords.map(sw => sw.word);
-
-     // Query the database for WordOccurrences that match the similar words
-     const relevantWordOccurrences = await prisma.wordOccurrence.findMany({
-      where: {
-        bowVector: {
-          word: {
-            in: similarWordStrings,
+      // Query the database for scriptures that use the queried word
+      const relevantScriptures = await prisma.wordOccurrence.findMany({
+        where: {
+          bowVector: {
+            word,
           },
         },
-      },
-      include: {
-        verseScore: true,
-      },
+        include: {
+          verseScore: true,
+        },
+      });
+
+      // Extract unique verseScore records from the relevant WordOccurrences
+      const relevantVerseScores = [...new Set(relevantScriptures.map(wo => wo.verseScore))];
+
+      // Get the related verses based on VerseScore records
+      const relatedVerses = await Promise.all(
+        relevantVerseScores.map(async verseScore => {
+          const { bookName, chapter, verse } = verseScore;
+          // Construct the filename based on bookName
+          const fileName = bookName.replace(/ /g, '_') + '_Greek.txt';
+
+          // Fetch the text of the related verse from the file
+          const relatedVerseText = await fetchVerseText(fileName, chapter, verse);
+
+          return {
+            bookName,
+            chapter,
+            verse,
+            relatedVerseText,
+          };
+        })
+      );
+
+      // Return both the list of similar words and the list of scriptures
+      res.json({ similarWords, relatedVerses });
     });
-
-    // Extract unique verseScore records from the relevant WordOccurrences
-    const relevantVerseScores = [...new Set(relevantWordOccurrences.map(wo => wo.verseScore))];
-
-    // Get the related verses based on VerseScore records
-    const relatedVerses = await Promise.all(
-      relevantVerseScores.map(async verseScore => {
-        const { bookName, chapter, verse } = verseScore;
-        // Construct the filename based on bookName
-        const fileName = bookName.replace(/ /g, '_') + '_Greek.txt';
-
-        // Fetch the text of the related verse from the file
-        const relatedVerseText = await fetchVerseText(fileName, chapter, verse);
-
-        return {
-          bookName,
-          chapter,
-          verse,
-          relatedVerseText,
-        };
-      })
-    );
-
-    // Return the related verses as JSON
-    res.json(relatedVerses);
-  });
-} catch (error) {
-  res.status(500).json({ error: 'Internal server error' });
-}
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // API endpoint to fetch Greek text by book, chapter, and verse
@@ -122,22 +117,6 @@ app.get('/greekText', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
-});
-
-// API endpoint to fetch vector data for a list of words
-// It expects a JSON body with a 'words' key containing an array of words
-app.post('/wordVectors', async (req, res) => {
-  const { words } = req.body;
-  // TODO: Fetch vector data for these words from the database
-  // TODO: Return the fetched data as JSON
-});
-
-// API endpoint to fetch other occurrences of a specific word in scriptures
-// It expects the word as a query parameter
-app.get('/otherOccurrences', async (req, res) => {
-  const { word } = req.query;
-  // TODO: Fetch other occurrences of the word from the database
-  // TODO: Return the fetched data as JSON
 });
 
 // Start the Express server on port 3000 or the port defined in the environment
