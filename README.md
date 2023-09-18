@@ -20,7 +20,7 @@
 
 ## 📋 Description
 
-📖 **ChatGPTheopolis** is a sophisticated tool that provides deep insights into Bible Scriptures. It examines the original Greek/Roman text, puts the scripture into its historical and textual context, and generates pertinent data for researchers and scholars. Perfect for Bible studies, research, and gaining a better understanding of the holy text.
+📖 **ChatGPTheopolis** is a tool that provides insights into Bible Scriptures. It examines the original Greek/Hebrew text, puts the scripture into its historical and textual context, and generates pertinent data for researchers and scholars. Perfect for Bible studies, research, and gaining a better understanding of the holy text.
 
 ---
 
