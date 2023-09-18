@@ -1,6 +1,66 @@
 const { PrismaClient } = require('@prisma/client');
 const { preprocessGreekText } = require('./greekTextPreprocessor');
 const path = require('path');
+const fs = require('fs').promises;
+
+// Function to fetch verse text from a file
+async function fetchVerseText(fileName, chapter, verse) {
+  try {
+    // Construct the path to the file
+    const filePath = `./GreekTexts/${fileName}`;
+
+    // Read the file content
+    const fileContent = await fs.readFile(filePath, 'utf-8');
+    
+    // Check if the fileContent is a non-empty string
+    if (typeof fileContent !== 'string' || fileContent.trim() === '') {
+      throw new Error(`Verse text not found in ${fileName}`);
+    }
+
+    // Split the content into verses (assuming each verse is separated by a newline)
+    const verses = fileContent.split('\n');
+
+    // Find the verse by chapter and verse number
+    const targetVerse = verses.find(verseText => {
+      // Assuming each verse has a format like "1:1" or "2:3"
+      const [verseChapter, verseNumber] = verseText.split(':');
+      return parseInt(verseChapter) === chapter && parseInt(verseNumber) === verse;
+    });
+
+    if (!targetVerse) {
+      throw new Error(`Verse ${chapter}:${verse} not found in ${fileName}`);
+    }
+
+    // Initialize an array to store the related verses with book name
+    const relatedVerses = [];
+
+    // Prepend the book name to the related verse text
+    const book = fileName.replace(/_/g, ' ').replace(' Greek.txt', '');
+    const cleanedVerseText = // remove \r from the verse text
+      targetVerse.includes('\r')
+        ? targetVerse.replace('\r', '')
+        : targetVerse;
+    const relatedVerseText = `${book} ${cleanedVerseText}`;
+
+    // Create an object with the book name, chapter, verse, and related verse text
+    const relatedVerse = {
+      bookName: book,
+      chapter: chapter,
+      verse: verse,
+      relatedVerseText,
+    };
+
+    console.log(relatedVerse)
+
+    // Push the related verse object to the array
+    relatedVerses.push(relatedVerse);
+
+    return cleanedVerseText.trim(); // Return the trimmed verse text
+  } catch (error) {
+    console.error('Error fetching verse text:', error);
+    throw error;
+  }
+}
 
 const prisma = new PrismaClient();
 const CHAPTER_VERSE_REGEX = /^\d+:\d+$/;
@@ -185,7 +245,7 @@ async function fetchGreekText(book, chapter, verse) {
             totalOccurrences: true,
           },
         },
-        WordPosition: {  // Select WordPositions related to this WordOccurrence
+        WordPosition: {
           select: {
             position: true,
           },
@@ -193,7 +253,13 @@ async function fetchGreekText(book, chapter, verse) {
       },
     });
 
-    return greekTextData;
+    // Iterate through the fetched data
+    for (const data of greekTextData) {
+      // Use the fetchVerseText function to get the verse text
+      const verseText = await fetchVerseText(data.bookName, data.chapter, data.verse);
+    }
+
+    return relatedVerses;
 
   } catch (error) {
     // Handle the error accordingly
@@ -204,5 +270,6 @@ async function fetchGreekText(book, chapter, verse) {
 
 module.exports = {
   fetchGreekText,
+  fetchVerseText,
   insertGreekText,
 };
