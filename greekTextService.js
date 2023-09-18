@@ -25,26 +25,80 @@ function extractBookName(filePath) {
 async function createOrUpdateBowVector(word, bookName, chapter, verse) {
   let bowVector = await prisma.bowVector.findFirst({ where: { word } });
   let wordOccurrence;
+  let verseScore;
+
+  // Check if the VerseScore record exists
+  verseScore = await prisma.verseScore.findFirst({
+    where: { bookName, chapter, verse },
+  });
+
+  // If not, create one
+  if (!verseScore) {
+    // Generate a similarityIndex for the verse based on the words in the verse
+
+    verseScore = await prisma.verseScore.create({
+      data: { bookName, chapter, verse, similarityIndex: 0 },
+    });
+  }
 
   if (!bowVector) {
     bowVector = await prisma.bowVector.create({
       data: { word, totalOccurrences: 1 },
     });
+
     wordOccurrence = await prisma.wordOccurrence.create({
-      data: { bowVectorId: bowVector.id, bookName, chapter, verse, frequency: 1 },
+      data: {
+        bowVector: {
+          connect: {
+            id: bowVector.id,
+          }
+        },
+        frequency: 1,
+        verseScore: {
+          connect: {
+            id: verseScore.id,
+          }
+        },
+      },
     });
   } else {
     wordOccurrence = await prisma.wordOccurrence.findFirst({
-      where: { bowVectorId: bowVector.id, bookName, chapter, verse },
+      where: {
+        bowVector: {
+          id: bowVector.id,
+        },
+        verseScore: {
+          id: verseScore.id,
+        }
+      },
     });
-
+  
     wordOccurrence
-      ? await prisma.wordOccurrence.update({ where: { id: wordOccurrence.id }, data: { frequency: { increment: 1 } } })
+      ? await prisma.wordOccurrence.update({
+          where: { id: wordOccurrence.id },
+          data: { frequency: { increment: 1 } },
+        })
       : (wordOccurrence = await prisma.wordOccurrence.create({
-          data: { bowVectorId: bowVector.id, bookName, chapter, verse, frequency: 1 },
-        }));
+          data: {
+            bowVector: {
+              connect: {
+                id: bowVector.id,
+              }
+            },
+            frequency: 1,
+            verseScore: {
+              connect: {
+                id: verseScore.id,
+              }
+            },
+          },
+        }
+      ));
 
-    await prisma.bowVector.update({ where: { id: bowVector.id }, data: { totalOccurrences: { increment: 1 } } });
+    await prisma.bowVector.update({
+      where: { id: bowVector.id },
+      data: { totalOccurrences: { increment: 1 } },
+    });
   }
 
   return { bowVector, wordOccurrence };

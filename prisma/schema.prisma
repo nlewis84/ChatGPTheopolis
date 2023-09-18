@@ -11,27 +11,35 @@ datasource db {
 }
 
 model WordPosition {
-  id               Int            @id @default(autoincrement())
+  id               String         @id @default(cuid())
   wordOccurrence   WordOccurrence @relation(fields: [wordOccurrenceId], references: [id])
-  wordOccurrenceId Int
+  wordOccurrenceId String
   position         Int
   BowVector        BowVector?     @relation(fields: [bowVectorId], references: [id])
-  bowVectorId      Int?
+  bowVectorId      String?
+}
+
+model VerseScore {
+  id              String           @id @default(cuid())
+  bookName        String
+  chapter         Int
+  verse           Int
+  similarityIndex Float
+  WordOccurrences WordOccurrence[]
 }
 
 model WordOccurrence {
-  id           Int            @id @default(autoincrement())
-  bookName     String
+  id           String         @id @default(cuid())
+  verseScore   VerseScore     @relation(fields: [verseScoreId], references: [id])
+  verseScoreId String
   bowVector    BowVector      @relation(fields: [bowVectorId], references: [id])
-  bowVectorId  Int
+  bowVectorId  String
   frequency    Int
-  chapter      Int
-  verse        Int
   WordPosition WordPosition[]
 }
 
 model BowVector {
-  id               Int              @id @default(autoincrement())
+  id               String           @id @default(cuid())
   word             String
   totalOccurrences Int
   positions        WordPosition[]
