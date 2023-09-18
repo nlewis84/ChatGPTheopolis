@@ -32,9 +32,11 @@
     ```
 
 2. **Install the Dependencies**
+    Make sure you have Python3 and Pip installed on your machine. Then run the following command:
     ```bash
     cd ChatGPTheopolis
     yarn install
+    pip install -r requirements.txt
     ```
 
 3. **Create a Local Database**
