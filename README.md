@@ -74,3 +74,13 @@ yarn seed:greek
 ```
 
 > ⏰ **Note:** This will take a few minutes to complete. Please be patient. The Synoptic Gospels (Matthew, Mark, Luke, and John) take the longest.
+
+## Commands we need to remember for testing
+
+```bash
+  curl -X POST -H "Content-Type: application/json" -d '{"filePath": "EnglishTexts/1_Corinthians_English.txt"}' http://localhost:3000/insert
+```
+
+```bash
+  python3 ./scipts/train_word2vec_greek_bible.py ./EnglishTexts word2vec.model
+```
