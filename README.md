@@ -75,11 +75,15 @@ yarn seed:greek
 
 > ⏰ **Note:** This will take a few minutes to complete. Please be patient. The Synoptic Gospels (Matthew, Mark, Luke, and John) take the longest.
 
-## Commands we need to remember for testing
+:us: **Testing in English (WIP)**
+
+This is a WIP command, but you can instead seed the database with the English version of 1 Corinthians. Do this if you want to test the English version of the app.
 
 ```bash
   curl -X POST -H "Content-Type: application/json" -d '{"filePath": "EnglishTexts/1_Corinthians_English.txt"}' http://localhost:3000/insert
 ```
+
+This is a WIP command, but this will train the word2vec model on the English texts, supstitute ./GreekTexts to train on the Greek texts.
 
 ```bash
   python3 ./scipts/train_word2vec_greek_bible.py ./EnglishTexts word2vec.model
